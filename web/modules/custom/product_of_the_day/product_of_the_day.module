@@ -1,56 +1,56 @@
 <?php
 
+
 /**
- * Implementa hook_cron() para registrar un cron job explícito.
+ * Implements hook_cron().
  */
 function product_of_the_day_cron()
 {
-    \Drupal::logger('product_consumer')->notice('El cron job de ProductCronJobSubscriber ha sido ejecutado.');
 
-    $end_date = \Drupal::time()->getRequestTime();
-    $start_date = strtotime('-1 week', $end_date);
+  $end_date = \Drupal::time()->getRequestTime();
+  $start_date = strtotime('-1 week', $end_date);
 
-    $database = \Drupal::database();
-    $query = $database->select('product_of_day', 'p')
-        ->fields('p', ['nid', 'event_value'])
-        ->condition('event_value', $start_date, '>')
-        ->condition('event_value', $end_date, '<')
-        ->groupBy('nid')
-        ->orderBy('nid');
+  $database = \Drupal::database();
+  $query = $database->select('product_of_day', 'p')
+    ->fields('p', ['nid', 'event_value'])
+    ->condition('event_value', $start_date, '>')
+    ->condition('event_value', $end_date, '<')
+    ->groupBy('nid')
+    ->orderBy('nid');
 
-    $results = $query->execute();
+  $results = $query->execute();
 
-    $consolidado = [];
-    foreach ($results as $row) {
-        $consolidado[$row->nid] = isset($consolidado[$row->nid]) ? $consolidado[$row->nid] + 1 : 1;
+  $consolidado = [];
+  foreach ($results as $row) {
+    $consolidado[$row->nid] = isset($consolidado[$row->nid]) ? $consolidado[$row->nid] + 1 : 1;
+  }
+
+  $titles = [];
+  foreach ($consolidado as $nid => $count) {
+    $node = \Drupal\node\Entity\Node::load($nid);
+    if ($node) {
+      $titles[$nid] = $node->getTitle();
     }
+  }
 
-    $titles = [];
-    foreach ($consolidado as $nid => $count) {
-        $node = \Drupal\node\Entity\Node::load($nid);
-        if ($node) {
-            $titles[$nid] = $node->getTitle();
-        }
+  $message_body = "List of product<br>";
+  foreach ($consolidado as $nid => $count) {
+    if (isset($titles[$nid])) {
+      $message_body .= "NID: $nid, Title: " . $titles[$nid] . ", Count: $count <br>\n";
     }
+  }
 
-    $message_body = "Listado de productos y cantidad de consultas en la semana pasada:\n\n";
-    foreach ($consolidado as $nid => $count) {
-        if (isset($titles[$nid])) {
-            $message_body .= "NID: $nid, Título: " . $titles[$nid] . ", Consultas: $count\n";
-        }
-    }
+  $mailManager = \Drupal::service('plugin.manager.mail');
 
-    $mailManager = \Drupal::service('plugin.manager.mail');
-    $module = 'product_of_the_day';
-    $key = 'product_consumer_report';
-    $to = 'ja_avila@hotmail.com';
-    $subject = 'Consolidado de productos consultados';
-    $params['message'] = $message_body;
-    $params['subject'] = $subject;
-    $langcode = \Drupal::languageManager()->getDefaultLanguage()->getId();
-
-    // Enviar el correo.
-    $mailManager->mail($module, $key, $to, $langcode, $params);
-    \Drupal::logger('product_consumer')->notice($message_body);
+  $message = [
+    'id' => 'drupal_mail_test',
+    'headers' => ['Content-type' => 'text/html'],
+    'subject' => 'Consolidation of products',
+    'to' => 'ja_avila@hotmail.com',
+    'body' => $message_body,
+  ];
+  // Send the email.
+  $result = $mailManager->getInstance(['module' => 'simpletest', 'key' => 'drupal_mail_test'])->mail($message);
 
 }
+

@@ -4,50 +4,99 @@ namespace Drupal\product_of_the_day\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\node\Entity\Node;
-use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Render\RendererInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Provides a 'Product of the Day' Block.
+ * Provides a 'ProductOfTheDayBlock' block.
  *
  * @Block(
  *   id = "product_of_the_day_block",
- *   admin_label = @Translation("Product of the Day"),
- *   category = @Translation("Custom")
+ *   admin_label = @Translation("Product of the Day Block"),
+ *   category = @Translation("Custom Blocks")
  * )
  */
-class ProductOfTheDayBlock extends BlockBase
-{
+class ProductOfTheDayBlock extends BlockBase implements ContainerFactoryPluginInterface {
 
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * The renderer service.
+   *
+   * @var \Drupal\Core\Render\RendererInterface
+   */
+  protected $renderer;
+
+  /**
+   * Constructs a new ProductOfTheDayBlock.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin ID for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   * @param \Drupal\Core\Render\RendererInterface $renderer
+   *   The renderer service.
+   */
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    EntityTypeManagerInterface $entity_type_manager,
+    RendererInterface $renderer
+  ) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->entityTypeManager = $entity_type_manager;
+    $this->renderer = $renderer;
+  }
 
   /**
    * {@inheritdoc}
    */
-  public function build()
-  {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('entity_type.manager'),
+      $container->get('renderer')
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function build() {
     $build = [];
     $config = $this->getConfiguration();
 
     $selected_products = [];
     for ($i = 1; $i <= 5; $i++) {
       if (!empty($config['selected_product_' . $i])) {
-        $node = \Drupal::entityTypeManager()->getStorage('node')->load($config['selected_product_' . $i]);
+        $node = $this->entityTypeManager->getStorage('node')->load($config['selected_product_' . $i]);
         if ($node) {
           $selected_products[] = $node;
         }
       }
     }
 
-
     if (!empty($selected_products)) {
       $random_product = $selected_products[array_rand($selected_products)];
 
-      $render_controller = \Drupal::entityTypeManager()->getViewBuilder($random_product->getEntityTypeId());
+      $render_controller = $this->entityTypeManager->getViewBuilder($random_product->getEntityTypeId());
       $render_node = $render_controller->view($random_product, 'teaser');
 
-      $node_rendered = \Drupal::service('renderer')->render($render_node);
+      $node_rendered = $this->renderer->render($render_node);
 
       $nodeHtml = $node_rendered->__toString();
 
@@ -72,18 +121,13 @@ class ProductOfTheDayBlock extends BlockBase
       ];
     }
 
-    $cache_metadata = new CacheableMetadata();
-    $cache_metadata->setCacheMaxAge(0);
-    $cache_metadata->applyTo($build);
-
     return $build;
   }
+
   /**
    * {@inheritdoc}
    */
-  public function blockForm($form, FormStateInterface $form_state)
-  {
-
+  public function blockForm($form, FormStateInterface $form_state) {
     $config = $this->getConfiguration();
 
     for ($i = 1; $i <= 5; $i++) {
@@ -96,7 +140,7 @@ class ProductOfTheDayBlock extends BlockBase
           'target_bundles' => ['product'],
         ],
         '#default_value' => !empty($config['selected_product_' . $i])
-          ? \Drupal::entityTypeManager()->getStorage('node')->load($config['selected_product_' . $i])
+          ? $this->entityTypeManager->getStorage('node')->load($config['selected_product_' . $i])
           : NULL,
         '#description' => $this->t('Select a product for position @number.', ['@number' => $i]),
       ];
@@ -108,8 +152,7 @@ class ProductOfTheDayBlock extends BlockBase
   /**
    * {@inheritdoc}
    */
-  public function blockSubmit($form, FormStateInterface $form_state)
-  {
+  public function blockSubmit($form, FormStateInterface $form_state) {
     for ($i = 1; $i <= 5; $i++) {
       $this->setConfigurationValue(
         'selected_product_' . $i,
@@ -118,12 +161,11 @@ class ProductOfTheDayBlock extends BlockBase
     }
   }
 
-
   /**
-   * @return int
+   * {@inheritdoc}
    */
-  public function getCacheMaxAge()
-  {
+  public function getCacheMaxAge() {
     return 0;
   }
+
 }
