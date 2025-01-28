@@ -1,0 +1,12 @@
+name: 'My theme'
+type: theme
+description: 'Custom theme'
+core_version_requirement: ^10 || ^11
+base theme: olivero
+libraries:
+  - custom_theme/global-styling
+regions:
+  header: 'Header'
+  primary_menu: 'Main menu'
+  content: 'Content'
+  footer: 'Footer'

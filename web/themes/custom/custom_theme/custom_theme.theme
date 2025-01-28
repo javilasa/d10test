@@ -1,0 +1,77 @@
+<?php
+
+use Drupal\file\Entity\File;
+use Drupal\menu_item_extras\Entity\MenuItemExtrasMenuLinkContent;
+
+/**
+ * @file
+ * Template overrides and theme hooks for the theme.
+ */
+
+/**
+ * Implements hook_preprocess_page().
+ *
+ * Preprocess variables for the page templates.
+ */
+function custom_theme_preprocess_page(array &$variables)
+{
+  $menu_name = 'main';
+
+  $active_link = \Drupal::service('menu.active_trail')->getActiveLink($menu_name);
+
+  if ($active_link) {
+    $image_url = get_menu_item_image_recursive($active_link->getPluginId());
+    if ($image_url) {
+      $variables['banner_image'] = $image_url;
+      // \Drupal::messenger()->addMessage("URL de la imagen: {$image_url}");
+    }
+  }
+}
+
+/**
+ * Recursively retrieves the image URL of a menu item or its ancestors.
+ *
+ * @param string $plugin_id
+ *   The plugin ID of the menu item to check.
+ *
+ * @return string|null
+ *   The relative URL of the image if found, or NULL if no image is available.
+ */
+function get_menu_item_image_recursive($plugin_id)
+{
+
+  $link_item = get_link_item_by_uuid($plugin_id);
+  if ($link_item instanceof MenuItemExtrasMenuLinkContent) {
+    if ($link_item->hasField('field_banner_img') && !$link_item->get('field_banner_img')->isEmpty()) {
+      $image_file = $link_item->get('field_banner_img')->entity;
+      $file_url = "";
+      if ($image_file) {
+        $file_uri = $image_file->getFileUri();
+        $file_url = \Drupal::service('file_url_generator')->generateAbsoluteString($file_uri);
+      }
+      return $file_url;
+    }
+
+    return get_menu_item_image_recursive($link_item->getParentId());
+  }
+}
+
+/**
+ * Retrieves the menu link content entity by its plugin UUID.
+ *
+ * @param string $plugin_id
+ *   The plugin UUID of the menu link item.
+ *
+ * @return \Drupal\menu_link_content\Entity\MenuLinkContent|null
+ *   The menu link content entity if found, or NULL if no entity matches the UUID.
+ */
+function get_link_item_by_uuid($plugin_id)
+{
+
+  $uuid = str_replace('menu_link_content:', '', $plugin_id);
+  $menu_link_entities =   \Drupal::entityTypeManager()
+    ->getStorage('menu_link_content')
+    ->loadByProperties(['uuid' => $uuid]);
+
+  return reset($menu_link_entities);
+}

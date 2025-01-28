@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="{{ language.getId }}">
+  <head>
+    {{ attach_library('custom_theme/global-styling') }}
+    <head-placeholder token="{{ head_placeholder_token }}">
+    <title>{{ head_title }}</title>
+    <css-placeholder token="{{ placeholder_token }}">
+    <js-placeholder token="{{ placeholder_token }}">
+  </head>
+  <body class="{{ attributes.addClass(body_classes) }}">
+    <header>
+      <nav>
+        {{ page.primary_menu }}
+      </nav>
+    </header>
+    <main>
+    <div class="banner">
+        {% if banner_image %}
+            <img src="{{ banner_image }}" alt="Banner Image">
+        {% else %}
+            <p>No banner available.</p>
+        {% endif %}
+    </div>
+      {{ active_menu_title }}
+      {{ page.content }}
+    </main>
+    <footer>
+      {{ page.footer }}
+    </footer>
+  </body>
+</html>
