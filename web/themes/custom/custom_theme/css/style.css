@@ -61,3 +61,7 @@ body {
     height: 400px;
     object-fit: cover;
   }
+
+  ul.menu li a .primary-nav__menu-link-inner {
+    color: gray;
+  }
