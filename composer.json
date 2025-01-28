@@ -21,6 +21,7 @@
         "drupal/core-recommended": "^11.1",
         "drupal/menu_item_extras": "^3.1",
         "drupal/pathauto": "^1.13",
+        "drupal/simple_cron": "^1.1@beta",
         "drush/drush": "^13.3"
     },
     "conflict": {

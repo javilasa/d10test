@@ -23,7 +23,7 @@ ddev start
 ### 3. Import or create the database
 If you have a database backup, you can import it using:
 ```bash
-ddev import-db --src=your_database_backup.sql.gz
+ddev import-db --src=backup.sql.gz
 ```
 
 Alternatively, if you need to set up a fresh database, you can install Drupal using:

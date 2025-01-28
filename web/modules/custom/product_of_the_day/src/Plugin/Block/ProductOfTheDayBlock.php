@@ -46,14 +46,24 @@ class ProductOfTheDayBlock extends BlockBase
 
       $render_controller = \Drupal::entityTypeManager()->getViewBuilder($random_product->getEntityTypeId());
       $render_node = $render_controller->view($random_product, 'teaser');
-      
+
       $node_rendered = \Drupal::service('renderer')->render($render_node);
-      
+
       $nodeHtml = $node_rendered->__toString();
+
+      $timestamp = time();
+      $node_url = $random_product->toUrl();
+      $node_url->setOption('query', ['event' => $timestamp]);
 
       $build = [
         '#type' => 'markup',
         '#markup' => $nodeHtml,
+        'link' => [
+          '#type' => 'link',
+          '#title' => $this->t('View Product'),
+          '#url' => $node_url,
+          '#attributes' => ['class' => ['button', 'btn-primary']],
+        ],
       ];
     } else {
       $build = [
@@ -83,7 +93,7 @@ class ProductOfTheDayBlock extends BlockBase
         '#target_type' => 'node',
         '#selection_handler' => 'default',
         '#selection_settings' => [
-          'target_bundles' => ['product'], 
+          'target_bundles' => ['product'],
         ],
         '#default_value' => !empty($config['selected_product_' . $i])
           ? \Drupal::entityTypeManager()->getStorage('node')->load($config['selected_product_' . $i])

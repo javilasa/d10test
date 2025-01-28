@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function product_of_the_day_schema()
+{
+    $schema['product_of_day'] = [
+        'description' => 'Stores event tracking for nodes.',
+        'fields' => [
+            'id' => [
+                'description' => 'Primary Key.',
+                'type' => 'serial',
+                'not null' => TRUE,
+            ],
+            'nid' => [
+                'description' => 'Node ID.',
+                'type' => 'int',
+                'not null' => TRUE,
+            ],
+            'event_value' => [
+                'description' => 'Value of the event parameter.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+            ],
+            'timestamp' => [
+                'description' => 'Time when the event was registered.',
+                'type' => 'int',
+                'not null' => TRUE,
+            ],
+        ],
+        'primary key' => ['id'],
+    ];
+
+    return $schema;
+}
